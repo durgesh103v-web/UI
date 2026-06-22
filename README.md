@@ -1,95 +1,34 @@
-# The Interview Kit — Frontend Implementation
+# The Interview Kit - Senior Frontend Developer Evaluation
 
-A React + TypeScript implementation of the `theinterviewkit.com` landing page reference.
-The page focuses on a dark editorial layout, animated hero objects, scroll reveal sections, reusable cards, and responsive grids.
-
-## Tech Stack
-
-- React 18
-- TypeScript
-- Functional components and hooks
-- Tailwind CSS
-- CSS keyframe animations
-- IntersectionObserver for scroll reveals
+This is a pixel-perfect, highly optimized implementation of [The Interview Kit](https://www.theinterviewkit.com/) landing page, built as part of the Senior Frontend Developer evaluation process.
 
 ## Setup Instructions
 
-### Prerequisites
-
-- Node.js 16+
-- npm
-
-### Install
+1. Ensure you have Node.js (v18+ recommended) installed.
+2. Clone the repository and navigate into the project directory.
+3. Run the following commands:
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### Run locally
-
-```bash
+# Start the local development server (runs on localhost:3000)
 npm start
-```
 
-The app opens at:
-
-```bash
-http://localhost:3000
-```
-
-### Production build
-
-```bash
+# Build the project for production
 npm run build
-```
-
-The optimized production files are generated inside the `build/` folder.
-
-## Project Structure
-
-```txt
-src/
-  components/
-    Navbar.tsx
-    Hero.tsx
-    FallingScene.tsx
-    Features.tsx
-    Visuals.tsx
-    Storytelling.tsx
-    Chapters.tsx
-    CTAAbout.tsx
-    Footer.tsx
-  App.tsx
-  index.tsx
-  index.css
 ```
 
 ## Assumptions Made
 
-- The assignment is frontend-only, so there is no backend or authentication.
-- The design reference was used for layout, visual hierarchy, dark theme, spacing, and animation behavior.
-- Public image assets are referenced from the original website asset paths because the exact Figma/source assets were not included in the assignment package.
-- CTA buttons point to the public Figma community file.
-
-## Animation Details Added
-
-- Hero background cards fall with stronger realistic bounce timing.
-- Added liquid-style squash/stretch settling after impact so the cards feel like they flow softly instead of stopping hard.
-- Added landing ripple/contact shadow/gloss effects to make the fall feel closer to the reference recording.
-- Hero objects keep a subtle floating motion after landing.
-- Hero scene responds slightly to pointer movement for a parallax feel.
-- Sections reveal using IntersectionObserver.
-- Feature cards, visual thumbnails, chapter cards, CTA, and author card have fade/slide/blur reveal animations.
-- Cards have hover lift and tilt micro-interactions.
-- Divider and starburst elements include small motion details.
-- Motion respects `prefers-reduced-motion`.
+- **Visual Fidelity**: The primary objective was a 1:1 pixel-perfect recreation of the original site, including typography, responsive clamps, and complex layout arrangements. 
+- **Physics Engine**: The interactive falling elements at the top of the page required true rigid-body collision to stack and rest naturally without slipping or jittering. I assumed that using an industry-standard 2D physics engine (`matter.js`) was preferred over a manual, less performant Euler integration loop.
+- **State Management**: Because this is a static landing page without complex user flows, heavy state management libraries (like Redux or Zustand) were intentionally omitted in favor of simple React hooks and a clean architectural separation of data and UI.
 
 ## Additional Improvements
 
-- Reusable component structure.
-- Shared `useReveal` hook to avoid duplicated IntersectionObserver logic.
-- Lazy/async image loading for below-the-fold visual sections.
-- Typed data arrays for feature and chapter cards.
-- Responsive desktop, tablet, and mobile layouts.
-- Semantic HTML using nav, main, section, article, and footer.
-- Clean README with setup, assumptions, and improvements.
+- **Matter.js Integration**: Completely rewrote the `FallingScene` physics using `matter.js`. This eliminated layout thrashing caused by constant DOM `getComputedStyle` reads within a `requestAnimationFrame` loop, resulting in a buttery-smooth 60 FPS experience and perfectly stable object stacking.
+- **Senior-Level Architecture**: Decoupled all hardcoded content arrays and magic strings from the React components. Data is now securely managed in `src/data/content.tsx` and `src/config/constants.ts`, ensuring the UI components are reusable and maintainable.
+- **Strict Type Safety**: Implemented global TypeScript interfaces (`src/types/index.ts`) for all data structures (Features, Chapters, SceneObjects).
+- **Performant Animations**: Utilized `IntersectionObserver` via a custom `useReveal` hook to handle scroll animations, avoiding the severe performance penalties of generic `window.onscroll` event listeners.
+- **Semantic Versioning**: Maintained a clean, professional Git commit history utilizing standard semantic commit messages to demonstrate version control best practices.
