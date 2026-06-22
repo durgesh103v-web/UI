@@ -193,7 +193,7 @@ const FallingScene: React.FC = () => {
         lower.y += correction * 0.12;
 
         const offset = (upper.x + upper.width / 2 - (lower.x + lower.width / 2)) / Math.max(42, lower.width / 2);
-        const bounce = impact > 180 ? Math.min(420, impact * 0.42) : Math.min(70, impact * 0.18);
+        const bounce = impact > 180 ? Math.min(500, impact * 0.55) : Math.min(100, impact * 0.3);
 
         if (impact > 20) {
           upper.velocityY = -bounce;
@@ -208,6 +208,15 @@ const FallingScene: React.FC = () => {
           lower.squash = Math.max(lower.squash, Math.min(0.8, impact / 900));
         } else {
           upper.velocityY = Math.min(upper.velocityY, 0);
+          
+          // Apply strong friction when resting to prevent slipping
+          upper.velocityX *= 0.1;
+          lower.velocityX *= 0.8;
+          
+          // Slowly stabilize the rotation of the resting object
+          const endAngle = Number.parseFloat(getComputedStyle(upper.element).getPropertyValue('--end-rotate')) || 0;
+          upper.angularVelocity += (endAngle - upper.angle) * 0.1;
+          upper.angularVelocity *= 0.5;
         }
 
         const friction = 0.82;
@@ -262,7 +271,7 @@ const FallingScene: React.FC = () => {
 
             if (body.velocityY > 72) {
               body.squash = Math.max(body.squash, Math.min(1, body.velocityY / 720));
-              body.velocityY *= -0.26;
+              body.velocityY *= -0.35;
             } else if (body.velocityY >= 0) {
               body.velocityY = 0;
             }
