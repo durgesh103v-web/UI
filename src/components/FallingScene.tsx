@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import Matter from 'matter-js';
 
 type SceneObject = {
   id: string;
@@ -85,24 +86,6 @@ const objects: SceneObject[] = [
   },
 ];
 
-type Body = {
-  element: HTMLDivElement;
-  x: number;
-  y: number;
-  targetX: number;
-  width: number;
-  height: number;
-  velocityX: number;
-  velocityY: number;
-  angle: number;
-  angularVelocity: number;
-  mass: number;
-  delay: number;
-  squash: number;
-  kick: number;
-  active: boolean;
-};
-
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const readDegrees = (element: HTMLElement, property: string) => {
@@ -118,12 +101,15 @@ const FallingScene: React.FC = () => {
     const scene = sceneRef.current;
     if (!scene || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let frame = 0;
+    let engine: Matter.Engine;
+    let runner: Matter.Runner;
     let resizeTimer = 0;
-    let stopped = false;
 
     const startSimulation = () => {
-      cancelAnimationFrame(frame);
+      // Cleanup previous simulation
+      if (runner) Matter.Runner.stop(runner);
+      if (engine) Matter.Engine.clear(engine);
+
       scene.classList.remove('physics-active');
       objectRefs.current.forEach((element) => {
         if (!element) return;
@@ -134,178 +120,104 @@ const FallingScene: React.FC = () => {
       const sceneHeight = scene.clientHeight;
       const elements = objectRefs.current.filter((element): element is HTMLDivElement => Boolean(element && element.offsetWidth));
 
-      const bodies: Body[] = elements.map((element) => {
+      // Setup Matter engine
+      engine = Matter.Engine.create();
+      engine.world.gravity.y = 1.6;
+
+      scene.classList.add('physics-active');
+
+      const bodiesAndElements: Array<{ body: Matter.Body, element: HTMLDivElement, config: SceneObject }> = [];
+
+      elements.forEach((element) => {
         const config = objects[Number(element.dataset.index)];
         const width = element.offsetWidth;
         const height = element.offsetHeight;
-        const startAngle = readDegrees(element, '--start-rotate');
-        const endAngle = readDegrees(element, '--end-rotate');
+        const startAngle = readDegrees(element, '--start-rotate') * (Math.PI / 180);
         const targetX = clamp(sceneWidth * config.stackCenter - width / 2, -width * 0.18, sceneWidth - width * 0.82);
         const startX = clamp(targetX + config.spawnOffset, -width * 0.2, sceneWidth - width * 0.8);
 
-        return {
-          element,
-          x: startX,
-          y: -height - 120 - Number(element.dataset.index) * 42,
-          targetX,
-          width,
-          height,
-          velocityX: config.drift,
-          velocityY: 0,
+        // Initial setup for CSS
+        element.style.left = '0';
+        element.style.right = 'auto';
+        element.style.top = '0';
+        element.style.bottom = 'auto';
+        element.style.opacity = '0';
+
+        // Matter.js positions bodies by their center
+        const centerX = startX + width / 2;
+        const centerY = -height - 120 - Number(element.dataset.index) * 42;
+
+        const body = Matter.Bodies.rectangle(centerX, centerY, width, height, {
           angle: startAngle,
-          angularVelocity: (endAngle - startAngle) / 1.2,
-          mass: Math.max(1, width * height / 15000),
-          delay: config.delay,
-          squash: 0,
-          kick: 0,
-          active: false,
-        };
-      });
-
-      scene.classList.add('physics-active');
-      bodies.forEach((body) => {
-        body.element.style.left = '0';
-        body.element.style.right = 'auto';
-        body.element.style.top = '0';
-        body.element.style.bottom = 'auto';
-      });
-
-      const startedAt = performance.now();
-      let previousTime = startedAt;
-
-      const collide = (upper: Body, lower: Body) => {
-        const upperBottom = upper.y + upper.height;
-        const lowerTop = lower.y;
-        const penetration = upperBottom - lowerTop;
-        if (penetration <= 0) return;
-
-        const overlap = Math.min(upper.x + upper.width, lower.x + lower.width) - Math.max(upper.x, lower.x);
-        const neededOverlap = Math.min(upper.width, lower.width) * 0.08;
-        if (overlap <= neededOverlap) return;
-        if (upper.y + upper.height * 0.45 >= lower.y + lower.height * 0.55) return;
-
-        const relativeVelocity = upper.velocityY - lower.velocityY;
-        const impact = Math.max(0, relativeVelocity);
-        const correction = penetration + 0.7;
-
-        // Keep the top object resting on the lower object instead of letting both fall to the floor.
-        upper.y -= correction * 0.88;
-        lower.y += correction * 0.12;
-
-        const offset = (upper.x + upper.width / 2 - (lower.x + lower.width / 2)) / Math.max(42, lower.width / 2);
-        const bounce = impact > 180 ? Math.min(500, impact * 0.55) : Math.min(100, impact * 0.3);
-
-        if (impact > 20) {
-          upper.velocityY = -bounce;
-          // This fake upward kick gives the visible "box below jumps" effect from the reference video.
-          lower.velocityY = Math.min(lower.velocityY, -Math.min(145, impact * 0.16));
-          upper.velocityX += offset * Math.min(impact, 760) * 0.12;
-          lower.velocityX -= offset * Math.min(impact, 760) * 0.045;
-          upper.angularVelocity += offset * Math.min(impact, 760) * 0.04;
-          lower.angularVelocity -= offset * Math.min(impact, 760) * 0.015;
-          upper.squash = Math.max(upper.squash, Math.min(1, impact / 620));
-          lower.kick = Math.max(lower.kick, Math.min(1, impact / 680));
-          lower.squash = Math.max(lower.squash, Math.min(0.8, impact / 900));
-        } else {
-          upper.velocityY = Math.min(upper.velocityY, 0);
-          
-          // Apply strong friction when resting to prevent slipping
-          upper.velocityX *= 0.1;
-          lower.velocityX *= 0.8;
-          
-          // Slowly stabilize the rotation of the resting object
-          const endAngle = Number.parseFloat(getComputedStyle(upper.element).getPropertyValue('--end-rotate')) || 0;
-          upper.angularVelocity += (endAngle - upper.angle) * 0.1;
-          upper.angularVelocity *= 0.5;
-        }
-
-        const friction = 0.82;
-        upper.velocityX *= friction;
-        lower.velocityX *= friction;
-      };
-
-      const tick = (time: number) => {
-        if (stopped) return;
-        const elapsed = (time - startedAt) / 1000;
-        const delta = Math.min((time - previousTime) / 1000, 0.032);
-        previousTime = time;
-
-        bodies.forEach((body) => {
-          if (!body.active && elapsed >= body.delay) body.active = true;
-          if (!body.active) return;
-
-          body.velocityY += 1580 * delta;
-          body.x += body.velocityX * delta;
-          body.y += body.velocityY * delta;
-          body.angle += body.angularVelocity * delta;
-
-          // Pull every item gently toward its stack column so objects actually collide and pile up.
-          body.velocityX += (body.targetX - body.x) * delta * 6.2;
-          body.velocityX *= Math.pow(0.986, delta * 60);
-          body.angularVelocity *= Math.pow(0.988, delta * 60);
-          body.squash *= Math.pow(0.82, delta * 60);
-          body.kick *= Math.pow(0.72, delta * 60);
-
-          const sideLimit = body.width * 0.2;
-          if (body.x < -sideLimit) {
-            body.x = -sideLimit;
-            body.velocityX = Math.abs(body.velocityX) * 0.38;
-          } else if (body.x + body.width > sceneWidth + sideLimit) {
-            body.x = sceneWidth + sideLimit - body.width;
-            body.velocityX = -Math.abs(body.velocityX) * 0.38;
-          }
+          restitution: 0.55, // bounciness
+          friction: 0.8,
+          frictionAir: 0.015,
+          isSleeping: true, // we will wake it up based on delay
+          density: 0.002
         });
 
-        for (let pass = 0; pass < 6; pass += 1) {
-          const activeBodies = bodies.filter((body) => body.active).sort((a, b) => a.y - b.y);
+        bodiesAndElements.push({ body, element, config });
+        Matter.World.add(engine.world, body);
+      });
 
-          for (let i = 0; i < activeBodies.length; i += 1) {
-            for (let j = i + 1; j < activeBodies.length; j += 1) {
-              collide(activeBodies[i], activeBodies[j]);
-            }
+      // Add floor and walls
+      const floor = Matter.Bodies.rectangle(sceneWidth / 2, sceneHeight + 50, sceneWidth + 200, 100, { 
+        isStatic: true,
+        restitution: 0.35,
+        friction: 0.8
+      });
+      const leftWall = Matter.Bodies.rectangle(-50, sceneHeight / 2, 100, sceneHeight * 2, { isStatic: true });
+      const rightWall = Matter.Bodies.rectangle(sceneWidth + 50, sceneHeight / 2, 100, sceneHeight * 2, { isStatic: true });
+
+      Matter.World.add(engine.world, [floor, leftWall, rightWall]);
+
+      const startTime = performance.now();
+
+      Matter.Events.on(engine, 'beforeUpdate', () => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        bodiesAndElements.forEach(({ body, config, element }) => {
+          // Wake up bodies when their delay is reached
+          if (body.isSleeping && elapsed >= config.delay) {
+            Matter.Sleeping.set(body, false);
+            element.style.opacity = '1';
+            // Apply gentle horizontal pull towards their stack center mimicking the original pull
+            Matter.Body.setVelocity(body, { x: config.drift, y: body.velocity.y });
+          } else if (!body.isSleeping) {
+            // Very gentle force pulling them toward their designated column to help them stack
+            const elWidth = element.offsetWidth;
+            const targetX = clamp(sceneWidth * config.stackCenter, elWidth / 2, sceneWidth - elWidth / 2);
+            const pullForce = (targetX - body.position.x) * 0.00002;
+            Matter.Body.applyForce(body, body.position, { x: pullForce, y: 0 });
           }
-
-          activeBodies.forEach((body) => {
-            if (body.y + body.height < sceneHeight) return;
-            body.y = sceneHeight - body.height;
-
-            if (body.velocityY > 72) {
-              body.squash = Math.max(body.squash, Math.min(1, body.velocityY / 720));
-              body.velocityY *= -0.35;
-            } else if (body.velocityY >= 0) {
-              body.velocityY = 0;
-            }
-
-            body.velocityX *= 0.72;
-            body.angularVelocity *= 0.68;
-          });
-        }
-
-        bodies.forEach((body) => {
-          if (!body.active) return;
-          const squashAmount = Math.max(body.squash, body.kick * 0.55);
-          const scaleX = 1 + squashAmount * 0.075;
-          const scaleY = 1 - squashAmount * 0.105;
-          const kickLift = -body.kick * 9;
-          body.element.style.opacity = '1';
-          body.element.style.transform = `translate3d(${body.x.toFixed(2)}px, ${(body.y + kickLift).toFixed(2)}px, 0) rotate(${body.angle.toFixed(2)}deg) scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)})`;
         });
+      });
 
-        frame = requestAnimationFrame(tick);
-      };
+      // Sync DOM on each tick
+      Matter.Events.on(engine, 'afterUpdate', () => {
+        bodiesAndElements.forEach(({ body, element }) => {
+          if (body.isSleeping) return;
+          const bodyX = body.position.x - element.offsetWidth / 2;
+          const bodyY = body.position.y - element.offsetHeight / 2;
+          const angleDeg = body.angle * (180 / Math.PI);
+          element.style.transform = `translate3d(${bodyX.toFixed(2)}px, ${bodyY.toFixed(2)}px, 0) rotate(${angleDeg.toFixed(2)}deg)`;
+        });
+      });
 
-      frame = requestAnimationFrame(tick);
+      runner = Matter.Runner.create();
+      Matter.Runner.run(runner, engine);
     };
 
     startSimulation();
+
     const handleResize = () => {
       window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(startSimulation, 160);
     };
     window.addEventListener('resize', handleResize);
+
     return () => {
-      stopped = true;
-      cancelAnimationFrame(frame);
+      if (runner) Matter.Runner.stop(runner);
+      if (engine) Matter.Engine.clear(engine);
       window.clearTimeout(resizeTimer);
       window.removeEventListener('resize', handleResize);
     };
