@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
+import { useReveal } from '../hooks/useReveal';
 
 const CDN_ICONS = 'https://www.theinterviewkit.com/assets/img/icons';
 const CDN_IMAGES = 'https://www.theinterviewkit.com/assets/img/images';
@@ -32,25 +33,6 @@ const features: Feature[] = [
   },
 ];
 
-const useReveal = (ref: React.RefObject<HTMLElement>) => {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const nodes = el.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) {
-          (e.target as HTMLElement).classList.add('visible');
-          observer.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.08, rootMargin: '0px 0px -8% 0px' }
-    );
-    nodes.forEach((n) => observer.observe(n));
-    return () => observer.disconnect();
-  }, [ref]);
-};
-
 const Features: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
   useReveal(sectionRef);
@@ -68,6 +50,8 @@ const Features: React.FC = () => {
           <img
             src={`${CDN_IMAGES}/pages-desktop.png`}
             alt="Pages from The Interview Kit"
+            loading="lazy"
+            decoding="async"
             className="section-image w-full object-cover"
           />
         </div>
@@ -87,6 +71,8 @@ const Features: React.FC = () => {
               <img
                 src={`${CDN_ICONS}/${f.icon}.svg`}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="w-8 h-8 mb-5"
               />
               <h3 className="font-medium text-dark mb-2">{f.title}</h3>

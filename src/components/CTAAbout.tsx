@@ -1,25 +1,7 @@
 import React, { useRef } from 'react';
+import { useReveal } from '../hooks/useReveal';
 
 const CDN_IMAGES = 'https://www.theinterviewkit.com/assets/img/images';
-
-const useReveal = (ref: React.RefObject<HTMLElement>) => {
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const nodes = el.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) {
-          (e.target as HTMLElement).classList.add('visible');
-          observer.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.1, rootMargin: '0px 0px -8% 0px' }
-    );
-    nodes.forEach((n) => observer.observe(n));
-    return () => observer.disconnect();
-  }, [ref]);
-};
 
 const CTAAbout: React.FC = () => {
   const ctaRef = useRef<HTMLElement>(null);
@@ -36,6 +18,8 @@ const CTAAbout: React.FC = () => {
             <img
               src={`${CDN_IMAGES}/image-readytointerview.png`}
               alt="Three pages from The Interview Kit."
+              loading="lazy"
+              decoding="async"
               className="w-full object-cover"
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/65 backdrop-blur-[2px] p-10">
@@ -66,6 +50,8 @@ const CTAAbout: React.FC = () => {
             <img
               src={`${CDN_IMAGES}/profile-picture.png`}
               alt="A photograph of the author."
+              loading="lazy"
+              decoding="async"
               className="flex-shrink-0 w-20 h-20 rounded-full object-cover border border-border"
             />
             <div>

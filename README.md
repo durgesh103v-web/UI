@@ -73,7 +73,9 @@ src/
 
 ## Animation Details Added
 
-- Hero background cards fall into place with bounce timing.
+- Hero background cards fall with stronger realistic bounce timing.
+- Added liquid-style squash/stretch settling after impact so the cards feel like they flow softly instead of stopping hard.
+- Added landing ripple/contact shadow/gloss effects to make the fall feel closer to the reference recording.
 - Hero objects keep a subtle floating motion after landing.
 - Hero scene responds slightly to pointer movement for a parallax feel.
 - Sections reveal using IntersectionObserver.
@@ -85,6 +87,8 @@ src/
 ## Additional Improvements
 
 - Reusable component structure.
+- Shared `useReveal` hook to avoid duplicated IntersectionObserver logic.
+- Lazy/async image loading for below-the-fold visual sections.
 - Typed data arrays for feature and chapter cards.
 - Responsive desktop, tablet, and mobile layouts.
 - Semantic HTML using nav, main, section, article, and footer.

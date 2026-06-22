@@ -1,26 +1,8 @@
 import React, { useRef } from 'react';
+import { useReveal } from '../hooks/useReveal';
 
 const CDN_ICONS = 'https://www.theinterviewkit.com/assets/img/icons';
 const CDN_IMAGES = 'https://www.theinterviewkit.com/assets/img/images';
-
-const useReveal = (ref: React.RefObject<HTMLElement>) => {
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const nodes = el.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) {
-          (e.target as HTMLElement).classList.add('visible');
-          observer.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.08, rootMargin: '0px 0px -8% 0px' }
-    );
-    nodes.forEach((n) => observer.observe(n));
-    return () => observer.disconnect();
-  }, [ref]);
-};
 
 const Visuals: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -49,6 +31,8 @@ const Visuals: React.FC = () => {
                   key={img}
                   src={`${CDN_IMAGES}/${img}.png`}
                   alt="Thumbnail of a page of text and images"
+                  loading="lazy"
+                  decoding="async"
                   className="visual-thumb w-full rounded-xl object-cover shadow-sm"
                   style={{ animationDelay: `${(colIdx * 2 + rowIdx) * 0.06}s` }}
                 />
@@ -61,7 +45,7 @@ const Visuals: React.FC = () => {
           Eight chapters of guides, examples, tips &amp; tricks that'll help you land your next (or first) role as a product designer. Written with expert insight about the interview process.
         </p>
 
-        <img src={`${CDN_ICONS}/divider.svg`} alt="" className="reveal divider-line w-full mb-12 opacity-40" />
+        <img src={`${CDN_ICONS}/divider.svg`} alt="" loading="lazy" decoding="async" className="reveal divider-line w-full mb-12 opacity-40" />
 
         <div className="grid sm:grid-cols-2 gap-6">
           <div className="reveal info-card tilt-card">

@@ -1,26 +1,8 @@
 import React, { useRef } from 'react';
+import { useReveal } from '../hooks/useReveal';
 
 const CDN_ICONS = 'https://www.theinterviewkit.com/assets/img/icons';
 const CDN_IMAGES = 'https://www.theinterviewkit.com/assets/img/images';
-
-const useReveal = (ref: React.RefObject<HTMLElement>) => {
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const nodes = el.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) {
-          (e.target as HTMLElement).classList.add('visible');
-          observer.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.05, rootMargin: '0px 0px -8% 0px' }
-    );
-    nodes.forEach((n) => observer.observe(n));
-    return () => observer.disconnect();
-  }, [ref]);
-};
 
 interface Chapter {
   thumb: string;
@@ -124,7 +106,7 @@ const Chapters: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <div className="reveal chapter-panel">
           <div className="chapter-sun mb-5">
-            <img src={`${CDN_ICONS}/starburst.svg`} alt="" />
+            <img src={`${CDN_ICONS}/starburst.svg`} alt="" loading="lazy" decoding="async" />
           </div>
 
           <div className="text-center mb-10">
@@ -152,6 +134,8 @@ const Chapters: React.FC = () => {
                 <img
                   src={`${CDN_IMAGES}/${ch.thumb}.png`}
                   alt={`Thumbnail for ${ch.title}`}
+                  loading="lazy"
+                  decoding="async"
                   className="chapter-thumb w-full mb-4 object-cover"
                 />
                 <h3 className="font-medium text-dark mb-3 text-sm">{ch.title}</h3>

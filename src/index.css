@@ -515,43 +515,119 @@ main > section:not(.hero-stage)::before {
 .falling-object {
   position: absolute;
   opacity: 0;
-  transform: translateY(-130vh) rotate(var(--start-rotate));
+  transform: translate3d(0, -135vh, 0) rotate(var(--start-rotate));
   transform-origin: center bottom;
-  animation: object-drop var(--duration) var(--delay) linear forwards;
-  filter: drop-shadow(0 22px 22px rgba(0,0,0,.32));
-  will-change: transform, opacity;
+  animation: object-drop var(--duration) var(--delay) both;
+  filter: drop-shadow(0 24px 22px rgba(0,0,0,.34));
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  perspective: 900px;
+}
+
+.falling-object::before,
+.falling-object::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9%;
+  z-index: -1;
+  width: 72%;
+  height: 16%;
+  border-radius: 999px;
+  transform: translateX(-50%) scale(.2);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.falling-object::before {
+  background: radial-gradient(ellipse at center, rgba(255,255,255,.22), rgba(255,181,27,.14) 38%, transparent 72%);
+  filter: blur(1px);
+  animation: impact-ripple .95s var(--impact-delay) ease-out both;
+}
+
+.falling-object::after {
+  height: 9%;
+  width: 48%;
+  bottom: -4%;
+  background: radial-gradient(ellipse at center, rgba(247,242,223,.24), transparent 70%);
+  filter: blur(5px);
+  animation: soft-contact-shadow var(--duration) var(--delay) both;
 }
 
 .falling-object-inner {
+  position: relative;
   width: 100%;
   height: 100%;
-  animation: scene-float var(--float-duration, 5.8s) ease-in-out calc(var(--duration) + var(--delay) + .15s) infinite;
+  overflow: visible;
+  transform-origin: center bottom;
+  backface-visibility: hidden;
+  will-change: transform, filter;
+  animation:
+    liquid-settle var(--settle-duration, 1.15s) var(--settle-delay) cubic-bezier(.15,.78,.18,1) both,
+    scene-float var(--float-duration, 5.8s) ease-in-out var(--float-delay) infinite;
+}
+
+.falling-object-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 0 24%, rgba(255,255,255,.20) 42%, transparent 62% 100%);
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transform: translateX(-115%) skewX(-18deg);
+  animation: landing-gloss .72s var(--impact-delay) ease-out both;
+}
+
+.falling-scene.physics-active .falling-object {
+  animation: none;
+  filter: drop-shadow(0 24px 22px rgba(0,0,0,.34));
   transform-origin: center;
 }
 
-.scene-application { --start-rotate:-24deg; --end-rotate:0deg; --bounce:-8vh; --duration:2.55s; --delay:.3s; --float-duration:5.7s; left:-.5%; bottom:0; width:16%; height:19%; }
+.falling-scene.physics-active .falling-object::before {
+  animation: stack-impact-ripple 1.05s ease-out infinite;
+  animation-delay: calc(var(--delay) + .9s);
+}
+
+.falling-scene.physics-active .falling-object::after {
+  opacity: .22;
+  animation: none;
+  transform: translateX(-50%) scale(1);
+}
+
+.falling-scene.physics-active .falling-object-inner::after {
+  display: none;
+}
+
+.falling-scene.physics-active .falling-object-inner {
+  animation: stack-liquid-wobble 1.55s calc(var(--delay) + 1.05s) cubic-bezier(.15,.78,.18,1) both;
+  transform: none;
+}
+.scene-application { --start-rotate:-24deg; --end-rotate:0deg; --bounce:-10vh; --duration:2.55s; --delay:.22s; --impact-delay:1.80s; --settle-delay:2.44s; --float-delay:3.07s; --float-duration:5.7s; left:-.5%; bottom:0; width:16%; height:19%; z-index:1; }
 .scene-application .falling-object-inner { display:grid; place-content:center; gap:.5rem; text-align:center; border:.45rem solid #169368; border-radius:.7rem; background:#eff3f0; color:#10151a; font-size:clamp(.8rem,1.35vw,1.55rem); }
 .scene-application .check { margin:auto; display:grid; place-items:center; width:2rem; height:2rem; border-radius:50%; color:white; background:#169368; }
 
-.scene-resume { --start-rotate:25deg; --end-rotate:33deg; --bounce:-5.5vh; --duration:2.85s; --delay:.05s; --float-duration:6.4s; left:30%; bottom:13%; width:20%; height:33%; }
+.scene-resume { --start-rotate:25deg; --end-rotate:20deg; --bounce:-7.5vh; --duration:2.9s; --delay:.02s; --impact-delay:1.82s; --settle-delay:2.54s; --float-delay:3.22s; --float-duration:6.4s; left:30%; bottom:13%; width:20%; height:33%; z-index:3; }
 .scene-resume .falling-object-inner { overflow:hidden; padding:3.4rem 2.2rem 1.5rem; border-radius:.55rem; background:#f1f0e8; color:#12151b; text-align:left; }
 .resume-band { position:absolute; left:0; right:0; top:0; height:23%; background:#e95e42; }
 .scene-resume strong { font-size:clamp(1rem,1.6vw,2rem); line-height:1.1; }
 .scene-resume p { margin-top:1rem; font-size:clamp(.65rem,1.05vw,1.1rem); line-height:1.25; }
 
-.scene-tips { --start-rotate:-42deg; --end-rotate:8deg; --bounce:-7.5vh; --duration:2.45s; --delay:.58s; --float-duration:5.2s; left:17%; bottom:4%; width:13%; aspect-ratio:1; }
-.scene-tips .falling-object-inner { display:grid; place-content:center; text-align:center; border-radius:46% 54% 45% 55%; background:#e95035; color:#12151b; }
+.scene-tips { --start-rotate:-42deg; --end-rotate:8deg; --bounce:-10vh; --duration:2.48s; --delay:.5s; --impact-delay:2.04s; --settle-delay:2.66s; --float-delay:3.28s; --float-duration:5.2s; left:17%; bottom:4%; width:13%; aspect-ratio:1; z-index:5; }
+.scene-tips .falling-object-inner { display:grid; place-content:center; text-align:center; border-radius:46% 54% 45% 55%; background:#e95035; color:#12151b; --settle-duration:1.35s; }
 .scene-tips b { font-family:Georgia,serif; font-size:clamp(2.6rem,4vw,5rem); line-height:.8; }
 .scene-tips span { margin-top:.4rem; font-weight:700; font-size:clamp(.6rem,1vw,1rem); }
 
-.scene-compass { --start-rotate:90deg; --end-rotate:-8deg; --bounce:-9vh; --duration:2.3s; --delay:.88s; --float-duration:4.9s; left:29%; bottom:10%; width:6%; aspect-ratio:1; }
+.scene-compass { --start-rotate:90deg; --end-rotate:-8deg; --bounce:-12vh; --duration:2.3s; --delay:.78s; --impact-delay:2.21s; --settle-delay:2.78s; --float-delay:3.38s; --float-duration:4.9s; left:29%; bottom:10%; width:6%; aspect-ratio:1; z-index:7; }
 .scene-compass .falling-object-inner { display:grid; place-items:center; border:.45rem solid var(--yellow); border-radius:50%; background:#0d1119; color:var(--paper); font-size:2rem; }
 
-.scene-early { --start-rotate:18deg; --end-rotate:0deg; --bounce:-6.5vh; --duration:2.5s; --delay:.94s; --float-duration:6.1s; left:28%; bottom:-3%; width:17%; height:16%; }
+.scene-early { --start-rotate:18deg; --end-rotate:-4deg; --bounce:-8vh; --duration:2.55s; --delay:.9s; --impact-delay:2.48s; --settle-delay:3.12s; --float-delay:3.75s; --float-duration:6.1s; left:28%; bottom:-3%; width:17%; height:16%; z-index:6; }
 .scene-early .falling-object-inner { padding:1.3rem 2rem; border-radius:1.5rem; text-align:center; background:#124e95; color:var(--yellow); }
 .scene-early p { color:var(--paper); font-size:.7rem; margin-top:.4rem; }
 
-.scene-portfolio { --start-rotate:-30deg; --end-rotate:14deg; --bounce:-7vh; --duration:2.95s; --delay:.14s; --float-duration:6.8s; right:-2%; top:21%; width:32%; height:47%; }
+.scene-portfolio { --start-rotate:-30deg; --end-rotate:11deg; --bounce:-8.5vh; --duration:2.95s; --delay:.1s; --impact-delay:1.93s; --settle-delay:2.67s; --float-delay:3.35s; --float-duration:6.8s; right:-2%; top:21%; width:32%; height:47%; z-index:4; }
 .scene-portfolio .falling-object-inner { overflow:hidden; padding:3rem 2.4rem 2rem; border-radius:.55rem; background:#f3f1e8; color:#0e1118; }
 .browser-bar { display:flex; justify-content:space-between; align-items:center; font-size:clamp(.65rem,1vw,1.2rem); }
 .portfolio-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:1rem; height:75%; margin-top:2.5rem; }
@@ -559,48 +635,96 @@ main > section:not(.hero-stage)::before {
 .portfolio-grid i:nth-child(2) { background:linear-gradient(140deg,#ef9bb5,#202638); }
 .portfolio-grid i:nth-child(3) { grid-column:1/-1; background:linear-gradient(140deg,#52bba3,#eee3d0); }
 
-.scene-mapper { --start-rotate:18deg; --end-rotate:0deg; --bounce:-5.5vh; --duration:2.75s; --delay:.72s; --float-duration:5.4s; left:51%; bottom:-6%; width:24%; height:38%; }
+.scene-mapper { --start-rotate:18deg; --end-rotate:-2deg; --bounce:-7.2vh; --duration:2.78s; --delay:.66s; --impact-delay:2.38s; --settle-delay:3.08s; --float-delay:3.74s; --float-duration:5.4s; left:51%; bottom:-6%; width:24%; height:38%; z-index:2; }
 .scene-mapper .falling-object-inner { padding:2rem 3.7rem; border-radius:.5rem; background:#f2f1ea; color:#0e1118; text-align:left; }
 .mini-window-dots { color:#c6c6c2; }
 .map-lines { height:53%; margin:1.5rem 0; border-radius:.35rem; background-color:#328e83; background-image:linear-gradient(25deg,transparent 45%,rgba(8,41,44,.55) 47%,transparent 50%),linear-gradient(105deg,transparent 45%,rgba(8,41,44,.45) 47%,transparent 50%); background-size:38px 32px; }
 .scene-mapper strong,.scene-mapper small { display:block; }
 
-.scene-case-study { --start-rotate:-22deg; --end-rotate:0deg; --bounce:-10vh; --duration:2.4s; --delay:1.06s; --float-duration:6s; right:3%; bottom:-1%; width:12%; aspect-ratio:1; }
-.scene-case-study .falling-object-inner { display:grid; place-items:center; text-align:center; background:#b89ab6; color:#11131a; font-size:clamp(1rem,1.7vw,2rem); line-height:.9; font-weight:900; clip-path:polygon(50% 0,58% 9%,68% 2%,74% 13%,85% 9%,88% 21%,100% 23%,95% 35%,100% 45%,91% 53%,98% 64%,87% 70%,90% 82%,77% 84%,73% 96%,62% 91%,52% 100%,44% 91%,32% 98%,27% 86%,14% 90%,12% 77%,0 72%,7% 61%,1% 51%,10% 42%,3% 31%,15% 25%,14% 13%,27% 14%,35% 3%,44% 10%); }
+.scene-case-study { --start-rotate:-22deg; --end-rotate:9deg; --bounce:-13vh; --duration:2.42s; --delay:1s; --impact-delay:2.50s; --settle-delay:3.11s; --float-delay:3.72s; --float-duration:6s; right:3%; bottom:-1%; width:12%; aspect-ratio:1; z-index:8; }
+.scene-case-study .falling-object-inner { display:grid; place-items:center; text-align:center; background:#b89ab6; color:#11131a; font-size:clamp(1rem,1.7vw,2rem); line-height:.9; font-weight:900; clip-path:polygon(50% 0,58% 9%,68% 2%,74% 13%,85% 9%,88% 21%,100% 23%,95% 35%,100% 45%,91% 53%,98% 64%,87% 70%,90% 82%,77% 84%,73% 96%,62% 91%,52% 100%,44% 91%,32% 98%,27% 86%,14% 90%,12% 77%,0 72%,7% 61%,1% 51%,10% 42%,3% 31%,15% 25%,14% 13%,27% 14%,35% 3%,44% 10%); --settle-duration:1.4s; }
+
+
+@keyframes stack-impact-ripple {
+  0%, 18% { opacity: 0; transform: translateX(-50%) scale(.22); }
+  30% { opacity: .42; transform: translateX(-50%) scale(.72); }
+  58%, 100% { opacity: 0; transform: translateX(-50%) scale(1.4); }
+}
+
+@keyframes stack-liquid-wobble {
+  0% { transform: scale3d(1,1,1); }
+  16% { transform: scale3d(1.045,.94,1) skewX(-1.8deg); }
+  32% { transform: scale3d(.972,1.035,1) skewX(1.2deg); }
+  52% { transform: scale3d(1.018,.985,1) skewX(-.7deg); }
+  74% { transform: scale3d(.996,1.006,1); }
+  100% { transform: scale3d(1,1,1); }
+}
 
 @keyframes object-drop {
   0% {
     opacity: 0;
-    transform: translateY(-130vh) rotate(var(--start-rotate)) scale(1);
-    animation-timing-function: cubic-bezier(.42, 0, .92, .58);
+    transform: translate3d(0, -135vh, 0) rotate(var(--start-rotate)) scale3d(.985, 1.035, 1);
+    filter: drop-shadow(0 8px 8px rgba(0,0,0,.12));
+    animation-timing-function: cubic-bezier(.42, 0, .93, .58);
   }
-  8% { opacity: 1; }
-  65% {
+  7% { opacity: 1; }
+  62% {
     opacity: 1;
-    transform: translateY(0) rotate(var(--end-rotate)) scaleX(1.025) scaleY(.96);
-    animation-timing-function: cubic-bezier(.12, .7, .2, 1);
+    transform: translate3d(0, 0, 0) rotate(var(--end-rotate)) scale3d(1.07,.90,1);
+    filter: drop-shadow(0 11px 8px rgba(0,0,0,.26));
+    animation-timing-function: cubic-bezier(.12,.72,.18,1);
   }
-  80% {
-    transform: translateY(var(--bounce)) rotate(calc(var(--end-rotate) - 3.5deg)) scale(1);
-    animation-timing-function: cubic-bezier(.45, 0, .75, .55);
+  77% {
+    transform: translate3d(0, var(--bounce), 0) rotate(calc(var(--end-rotate) - 3deg)) scale3d(.985,1.025,1);
+    filter: drop-shadow(0 32px 24px rgba(0,0,0,.34));
+    animation-timing-function: cubic-bezier(.48,0,.78,.55);
   }
-  89% {
-    transform: translateY(0) rotate(calc(var(--end-rotate) + 1.2deg)) scaleX(1.012) scaleY(.982);
-    animation-timing-function: cubic-bezier(.15, .65, .25, 1);
+  87% {
+    transform: translate3d(0, 0, 0) rotate(calc(var(--end-rotate) + 1deg)) scale3d(1.035,.95,1);
+    animation-timing-function: cubic-bezier(.14,.72,.2,1);
   }
-  95% {
-    transform: translateY(calc(var(--bounce) * .22)) rotate(calc(var(--end-rotate) - .5deg)) scale(1);
-    animation-timing-function: ease-in;
+  94% {
+    transform: translate3d(0, calc(var(--bounce) * .2), 0) rotate(calc(var(--end-rotate) - .45deg)) scale3d(.995,1.01,1);
+    animation-timing-function: cubic-bezier(.45,0,.78,.6);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) rotate(var(--end-rotate)) scale(1);
+    transform: translate3d(0, 0, 0) rotate(var(--end-rotate)) scale3d(1,1,1);
+    filter: drop-shadow(0 24px 22px rgba(0,0,0,.34));
   }
 }
 
+@keyframes liquid-settle {
+  0% { transform: scale3d(1,1,1); filter: blur(0); }
+  20% { transform: scale3d(1.025,.975,1); }
+  45% { transform: scale3d(.99,1.012,1); }
+  70% { transform: scale3d(1.006,.995,1); }
+  100% { transform: scale3d(1,1,1); filter: blur(0); }
+}
+@keyframes impact-ripple {
+  0% { opacity: 0; transform: translateX(-50%) scale(.18); }
+  12% { opacity: .68; }
+  100% { opacity: 0; transform: translateX(-50%) scale(1.55); }
+}
+
+@keyframes soft-contact-shadow {
+  0%, 48% { opacity: 0; transform: translateX(-50%) scale(.25); }
+  62% { opacity: .42; transform: translateX(-50%) scale(1.12); }
+  77% { opacity: .16; transform: translateX(-50%) scale(.72); }
+  100% { opacity: .28; transform: translateX(-50%) scale(1); }
+}
+
+@keyframes landing-gloss {
+  0%, 18% { opacity: 0; transform: translateX(-115%) skewX(-18deg); }
+  34% { opacity: .32; }
+  100% { opacity: 0; transform: translateX(115%) skewX(-18deg); }
+}
+
 @keyframes scene-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(.8deg); }
+  0%, 100% { transform: translate3d(0,0,0) rotate(0deg); }
+  25% { transform: translate3d(1px,-5px,0) rotate(.35deg); }
+  50% { transform: translate3d(-1px,-9px,0) rotate(.85deg); }
+  75% { transform: translate3d(1px,-4px,0) rotate(-.25deg); }
 }
 
 @keyframes hero-copy-in {
@@ -668,7 +792,10 @@ main > section:not(.hero-stage)::before {
 
   .falling-scene { transform:none; }
   .falling-object { opacity:1; animation:none; transform:translateY(0) rotate(var(--end-rotate)); }
-  .falling-object-inner { animation:none; }
+  .falling-object::before,
+  .falling-object::after,
+  .falling-object-inner::after { display:none; }
+  .falling-object-inner { animation:none; transform:none; }
   .hero-copy, .hero-logo { opacity:1; animation:none; }
   .hero-scroll span { animation:none; }
 }
