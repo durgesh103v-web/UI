@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import FallingScene from './FallingScene';
-
-const FIGMA_URL = 'https://www.figma.com/community/file/1268352321000064567';
+import { FIGMA_URL } from '../config/constants';
 
 const Hero: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);

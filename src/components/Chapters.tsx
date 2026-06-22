@@ -22,7 +22,7 @@ const Chapters: React.FC = () => {
             </h2>
             <p className="text-muted text-sm mb-7">Eight chapters of delicious detail.</p>
             <a
-              href="https://www.figma.com/community/file/1268352321000064567"
+              href={FIGMA_URL}
               target="_blank"
               rel="noreferrer"
               className="btn-primary"
